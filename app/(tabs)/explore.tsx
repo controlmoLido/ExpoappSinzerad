@@ -1,110 +1,224 @@
-import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
+import { useRouter } from 'expo-router';
+import React, { useState } from 'react';
+import {
+  Alert,
+  Button,
+  Platform,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
 
-import { Collapsible } from '@/components/Collapsible';
-import { ExternalLink } from '@/components/ExternalLink';
-import ParallaxScrollView from '@/components/ParallaxScrollView';
-import { ThemedText } from '@/components/ThemedText';
-import { ThemedView } from '@/components/ThemedView';
-import { IconSymbol } from '@/components/ui/IconSymbol';
+export default function RegisterScreen() {
+  const router = useRouter();
+  const [nom, setNom] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
 
-export default function TabTwoScreen() {
+  const [nomError, setNomError] = useState('');
+  const [emailError, setEmailError] = useState('');
+  const [passwordError, setPasswordError] = useState('');
+  const [confirmPasswordError, setConfirmPasswordError] = useState('');
+
+  const log = {
+    success: (msg: string) => console.log(`\x1b[32m[SUCCESS]\x1b[0m ${msg}`),
+    warn: (msg: string) => console.log(`\x1b[33m[WARNING]\x1b[0m ${msg}`),
+    error: (msg: string) => console.log(`\x1b[31m[ERROR]\x1b[0m ${msg}`),
+    info: (msg: string) => console.log(`\x1b[36m[INFO]\x1b[0m ${msg}`),
+  };
+
+  const handleRegister = async () => {
+    log.info('Starting registration process...');
+    setNomError('');
+    setEmailError('');
+    setPasswordError('');
+    setConfirmPasswordError('');
+
+    let hasError = false;
+
+    if (!nom) {
+      setNomError('Username is required');
+      log.warn('Username is missing');
+      hasError = true;
+    }
+
+    if (!email) {
+      setEmailError('Email is required');
+      log.warn('Email is missing');
+      hasError = true;
+    } else if (!email.includes('@')) {
+      setEmailError('Email must contain "@"');
+      log.warn('Email format is invalid (missing "@")');
+      hasError = true;
+    }
+
+    if (!password) {
+      setPasswordError('Password is required');
+      log.warn('Password is missing');
+      hasError = true;
+    }
+
+    if (!confirmPassword) {
+      setConfirmPasswordError('Confirm Password is required');
+      log.warn('Confirm password is missing');
+      hasError = true;
+    }
+
+    if (password && confirmPassword && password !== confirmPassword) {
+      setConfirmPasswordError('Passwords do not match');
+      log.warn('Passwords do not match');
+      hasError = true;
+    }
+
+    if (hasError) {
+      log.error('Validation failed. Aborting registration.');
+      return;
+    }
+
+    try {
+      log.info('Sending POST request to backend...');
+      const response = await fetch('http://127.0.0.1:5000/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ nom, email, password }),
+      });
+
+      const data = await response.json();
+      log.info(`Response received: ${JSON.stringify(data)}`);
+
+      if (response.ok) {
+        log.success('Registration successful!');
+        Alert.alert('Success', 'Registration complete! Please log in.');
+        setNom('');
+        setEmail('');
+        setPassword('');
+        setConfirmPassword('');
+        router.push('/');
+      } else {
+        log.error(`Backend error: ${data.error}`);
+
+        if (data.error?.toLowerCase().includes('username') && data.error?.toLowerCase().includes('email')) {
+          setNomError('Username already exists');
+          setEmailError('Email already exists');
+        } else if (data.error?.toLowerCase().includes('username')) {
+          setNomError('Username already exists');
+        } else if (data.error?.toLowerCase().includes('email')) {
+          setEmailError('Email already exists');
+        } else {
+          Alert.alert('Registration Failed', data.error || 'Unknown error');
+        }
+      }
+    } catch (error) {
+      log.error('Network error or backend not reachable');
+      console.error(error);
+      Alert.alert('Error', 'Network error or backend not running');
+    }
+  };
+
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#D0D0D0', dark: '#353636' }}
-      headerImage={
-        <IconSymbol
-          size={310}
-          color="#808080"
-          name="chevron.left.forwardslash.chevron.right"
-          style={styles.headerImage}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Explore</ThemedText>
-      </ThemedView>
-      <ThemedText>This app includes example code to help you get started.</ThemedText>
-      <Collapsible title="File-based routing">
-        <ThemedText>
-          This app has two screens:{' '}
-          <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> and{' '}
-          <ThemedText type="defaultSemiBold">app/(tabs)/explore.tsx</ThemedText>
-        </ThemedText>
-        <ThemedText>
-          The layout file in <ThemedText type="defaultSemiBold">app/(tabs)/_layout.tsx</ThemedText>{' '}
-          sets up the tab navigator.
-        </ThemedText>
-        <ExternalLink href="https://docs.expo.dev/router/introduction">
-          <ThemedText type="link">Learn more</ThemedText>
-        </ExternalLink>
-      </Collapsible>
-      <Collapsible title="Android, iOS, and web support">
-        <ThemedText>
-          You can open this project on Android, iOS, and the web. To open the web version, press{' '}
-          <ThemedText type="defaultSemiBold">w</ThemedText> in the terminal running this project.
-        </ThemedText>
-      </Collapsible>
-      <Collapsible title="Images">
-        <ThemedText>
-          For static images, you can use the <ThemedText type="defaultSemiBold">@2x</ThemedText> and{' '}
-          <ThemedText type="defaultSemiBold">@3x</ThemedText> suffixes to provide files for
-          different screen densities
-        </ThemedText>
-        <Image source={require('@/assets/images/react-logo.png')} style={{ alignSelf: 'center' }} />
-        <ExternalLink href="https://reactnative.dev/docs/images">
-          <ThemedText type="link">Learn more</ThemedText>
-        </ExternalLink>
-      </Collapsible>
-      <Collapsible title="Custom fonts">
-        <ThemedText>
-          Open <ThemedText type="defaultSemiBold">app/_layout.tsx</ThemedText> to see how to load{' '}
-          <ThemedText style={{ fontFamily: 'SpaceMono' }}>
-            custom fonts such as this one.
-          </ThemedText>
-        </ThemedText>
-        <ExternalLink href="https://docs.expo.dev/versions/latest/sdk/font">
-          <ThemedText type="link">Learn more</ThemedText>
-        </ExternalLink>
-      </Collapsible>
-      <Collapsible title="Light and dark mode components">
-        <ThemedText>
-          This template has light and dark mode support. The{' '}
-          <ThemedText type="defaultSemiBold">useColorScheme()</ThemedText> hook lets you inspect
-          what the user&apos;s current color scheme is, and so you can adjust UI colors accordingly.
-        </ThemedText>
-        <ExternalLink href="https://docs.expo.dev/develop/user-interface/color-themes/">
-          <ThemedText type="link">Learn more</ThemedText>
-        </ExternalLink>
-      </Collapsible>
-      <Collapsible title="Animations">
-        <ThemedText>
-          This template includes an example of an animated component. The{' '}
-          <ThemedText type="defaultSemiBold">components/HelloWave.tsx</ThemedText> component uses
-          the powerful <ThemedText type="defaultSemiBold">react-native-reanimated</ThemedText>{' '}
-          library to create a waving hand animation.
-        </ThemedText>
-        {Platform.select({
-          ios: (
-            <ThemedText>
-              The <ThemedText type="defaultSemiBold">components/ParallaxScrollView.tsx</ThemedText>{' '}
-              component provides a parallax effect for the header image.
-            </ThemedText>
-          ),
-        })}
-      </Collapsible>
-    </ParallaxScrollView>
+    <View style={styles.container}>
+      <Text style={styles.title}>Register</Text>
+
+      <TextInput
+        style={[styles.input, nomError ? styles.inputError : null]}
+        placeholder="Username"
+        value={nom}
+        onChangeText={text => {
+          setNom(text);
+          if (nomError) setNomError('');
+        }}
+      />
+      {nomError ? <Text style={styles.errorText}>{nomError}</Text> : null}
+
+      <TextInput
+        style={[styles.input, emailError ? styles.inputError : null]}
+        placeholder="Email"
+        keyboardType="email-address"
+        autoCapitalize="none"
+        value={email}
+        onChangeText={text => {
+          setEmail(text);
+          if (emailError) setEmailError('');
+        }}
+      />
+      {emailError ? <Text style={styles.errorText}>{emailError}</Text> : null}
+
+      <TextInput
+        style={[styles.input, passwordError ? styles.inputError : null]}
+        placeholder="Password"
+        secureTextEntry
+        value={password}
+        onChangeText={text => {
+          setPassword(text);
+          if (passwordError) setPasswordError('');
+        }}
+      />
+      {passwordError ? <Text style={styles.errorText}>{passwordError}</Text> : null}
+
+      <TextInput
+        style={[styles.input, confirmPasswordError ? styles.inputError : null]}
+        placeholder="Confirm Password"
+        secureTextEntry
+        value={confirmPassword}
+        onChangeText={text => {
+          setConfirmPassword(text);
+          if (confirmPasswordError) setConfirmPasswordError('');
+        }}
+      />
+      {confirmPasswordError ? <Text style={styles.errorText}>{confirmPasswordError}</Text> : null}
+
+      <Button title="Register" onPress={handleRegister} />
+
+      <View style={{ marginTop: 16 }}>
+        <Button title="Go to Login" onPress={() => router.push('/')} />
+      </View>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  headerImage: {
-    color: '#808080',
-    bottom: -90,
-    left: -35,
-    position: 'absolute',
+  container: {
+    flex: 1,
+    justifyContent: 'center',
+    paddingHorizontal: 24,
+    backgroundColor: '#fff',
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.25,
+        shadowRadius: 3.84,
+      },
+      android: {
+        elevation: 5,
+      },
+      web: {
+        boxShadow: '0px 2px 4px rgba(0,0,0,0.25)',
+      },
+    }),
   },
-  titleContainer: {
-    flexDirection: 'row',
-    gap: 8,
+  title: {
+    fontSize: 28,
+    fontWeight: '600',
+    marginBottom: 24,
+    textAlign: 'center',
+  },
+  input: {
+    height: 48,
+    borderColor: '#ccc',
+    borderWidth: 1,
+    marginBottom: 4,
+    paddingHorizontal: 12,
+    borderRadius: 6,
+  },
+  inputError: {
+    borderColor: 'red',
+  },
+  errorText: {
+    color: 'red',
+    marginBottom: 12,
+    marginLeft: 4,
   },
 });

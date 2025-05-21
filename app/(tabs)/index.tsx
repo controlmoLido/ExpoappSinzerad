@@ -1,75 +1,169 @@
-import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
+import { useRouter } from 'expo-router';
+import React, { useState } from 'react';
+import {
+  Alert,
+  Button,
+  Platform,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
 
-import { HelloWave } from '@/components/HelloWave';
-import ParallaxScrollView from '@/components/ParallaxScrollView';
-import { ThemedText } from '@/components/ThemedText';
-import { ThemedView } from '@/components/ThemedView';
+export default function LoginScreen() {
+  const router = useRouter();
+  const [nom, setNom] = useState(''); // username or email
+  const [password, setPassword] = useState('');
 
-export default function HomeScreen() {
+  const [nomError, setNomError] = useState('');
+  const [passwordError, setPasswordError] = useState('');
+
+  const handleLogin = async () => {
+    console.log('%chandleLogin triggered', 'color: blue; font-weight: bold;');
+    setNomError('');
+    setPasswordError('');
+
+    let hasError = false;
+    if (!nom) {
+      setNomError('Username or Email is required');
+      console.log('%cValidation failed: nom is empty', 'color: orange; font-weight: bold;');
+      hasError = true;
+    }
+    if (!password) {
+      setPasswordError('Password is required');
+      console.log('%cValidation failed: password is empty', 'color: orange; font-weight: bold;');
+      hasError = true;
+    }
+    if (hasError) return;
+
+    try {
+      const isEmail = nom.includes('@');
+      const body = isEmail
+        ? { email: nom, password }
+        : { username: nom, password };
+
+      console.log('%cSending login request with body:', 'color: purple;', body);
+
+      const response = await fetch('http://127.0.0.1:5000/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+
+      console.log('%cResponse status:', 'color: teal;', response.status);
+
+      const data = await response.json();
+      console.log('%cResponse data:', 'color: teal;', data);
+
+      if (response.ok) {
+        Alert.alert('Success', `Welcome, ${data.user.nom}`);
+        console.log('%cLogin successful for user:', 'color: green;', data.user.nom);
+        setNom('');
+        setPassword('');
+        router.push('/(tabs)/MainMenu/Main');
+      } else {
+        console.log('%cLogin failed:', 'color: red;', data.error);
+        if (data.error === 'Incorrect password') {
+          setPasswordError('Password is incorrect.');
+        } else if (
+          data.error === 'User not found' ||
+          data.error === 'Username or Email does not exist'
+        ) {
+          setNomError('Username or Email does not exist.');
+        } else {
+          Alert.alert('Login Failed', data.error || 'Invalid credentials');
+        }
+      }
+    } catch (error) {
+      console.error('%cLogin error:', 'color: red; font-weight: bold;', error);
+      Alert.alert('Error', 'Network error or backend not running');
+    }
+  };
+
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12',
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-        <ThemedText>
-          {`Tap the Explore tab to learn more about what's included in this starter app.`}
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          {`When you're ready, run `}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+    <View style={styles.container}>
+      <Text style={styles.title}>Login</Text>
+
+      <TextInput
+        style={[styles.input, nomError ? styles.inputError : null]}
+        placeholder="Username or Email"
+        value={nom}
+        onChangeText={text => {
+          setNom(text);
+          if (nomError) setNomError('');
+          console.log('%cNom input changed:', 'color: brown;', text);
+        }}
+        autoCapitalize="none"
+        keyboardType="email-address"
+      />
+      {nomError ? <Text style={styles.errorText}>{nomError}</Text> : null}
+
+      <TextInput
+        style={[styles.input, passwordError ? styles.inputError : null]}
+        placeholder="Password"
+        value={password}
+        secureTextEntry
+        onChangeText={text => {
+          setPassword(text);
+          if (passwordError) setPasswordError('');
+          console.log('%cPassword input changed', 'color: brown;');
+        }}
+      />
+      {passwordError ? <Text style={styles.errorText}>{passwordError}</Text> : null}
+
+      <Button title="Login" onPress={handleLogin} />
+
+      <View style={{ marginTop: 16 }}>
+        <Button title="Register" onPress={() => {
+          console.log('%cNavigate to Register screen', 'color: navy;');
+          router.push('/explore');
+        }} />
+      </View>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  titleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
+  container: {
+    flex: 1,
+    justifyContent: 'center',
+    paddingHorizontal: 24,
+    backgroundColor: '#fff',
+    ...Platform.select({
+      web: {
+        boxShadow: '0px 2px 6px rgba(0, 0, 0, 0.15)',
+      },
+      android: {
+        elevation: 5,
+      },
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.25,
+        shadowRadius: 3.84,
+      },
+    }),
   },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
+  title: {
+    fontSize: 28,
+    fontWeight: '600',
+    marginBottom: 24,
+    textAlign: 'center',
   },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
+  input: {
+    height: 48,
+    borderColor: '#ccc',
+    borderWidth: 1,
+    marginBottom: 4,
+    paddingHorizontal: 12,
+    borderRadius: 6,
+  },
+  inputError: {
+    borderColor: 'red',
+  },
+  errorText: {
+    color: 'red',
+    marginBottom: 12,
+    marginLeft: 4,
   },
 });
