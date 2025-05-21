@@ -1,18 +1,19 @@
+import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import {
   Alert,
-  Button,
   Platform,
   StyleSheet,
   Text,
   TextInput,
+  TouchableOpacity,
   View,
 } from 'react-native';
 
 export default function LoginScreen() {
   const router = useRouter();
-  const [nom, setNom] = useState(''); // username or email
+  const [nom, setNom] = useState('');
   const [password, setPassword] = useState('');
 
   const [nomError, setNomError] = useState('');
@@ -81,54 +82,66 @@ export default function LoginScreen() {
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Login</Text>
+    <LinearGradient colors={['#6a11cb', '#2575fc']} style={styles.gradientContainer}>
+      <View style={styles.container}>
+        <Text style={styles.title}>Login</Text>
 
-      <TextInput
-        style={[styles.input, nomError ? styles.inputError : null]}
-        placeholder="Username or Email"
-        value={nom}
-        onChangeText={text => {
-          setNom(text);
-          if (nomError) setNomError('');
-          console.log('%cNom input changed:', 'color: brown;', text);
-        }}
-        autoCapitalize="none"
-        keyboardType="email-address"
-      />
-      {nomError ? <Text style={styles.errorText}>{nomError}</Text> : null}
+        <TextInput
+          style={[styles.input, nomError ? styles.inputError : null]}
+          placeholder="Username or Email"
+          value={nom}
+          onChangeText={text => {
+            setNom(text);
+            if (nomError) setNomError('');
+            console.log('%cNom input changed:', 'color: brown;', text);
+          }}
+          autoCapitalize="none"
+          keyboardType="email-address"
+        />
+        {nomError ? <Text style={styles.errorText}>{nomError}</Text> : null}
 
-      <TextInput
-        style={[styles.input, passwordError ? styles.inputError : null]}
-        placeholder="Password"
-        value={password}
-        secureTextEntry
-        onChangeText={text => {
-          setPassword(text);
-          if (passwordError) setPasswordError('');
-          console.log('%cPassword input changed', 'color: brown;');
-        }}
-      />
-      {passwordError ? <Text style={styles.errorText}>{passwordError}</Text> : null}
+        <TextInput
+          style={[styles.input, passwordError ? styles.inputError : null]}
+          placeholder="Password"
+          value={password}
+          secureTextEntry
+          onChangeText={text => {
+            setPassword(text);
+            if (passwordError) setPasswordError('');
+            console.log('%cPassword input changed', 'color: brown;');
+          }}
+        />
+        {passwordError ? <Text style={styles.errorText}>{passwordError}</Text> : null}
 
-      <Button title="Login" onPress={handleLogin} />
+        <TouchableOpacity style={styles.loginButton} onPress={handleLogin} activeOpacity={0.8}>
+          <Text style={styles.loginButtonText}>Login</Text>
+        </TouchableOpacity>
 
-      <View style={{ marginTop: 16 }}>
-        <Button title="Register" onPress={() => {
-          console.log('%cNavigate to Register screen', 'color: navy;');
-          router.push('/explore');
-        }} />
+        <View style={{ marginTop: 16 }}>
+          <TouchableOpacity
+            style={styles.registerButton}
+            onPress={() => {
+              console.log('%cNavigate to Register screen', 'color: navy;');
+              router.push('/explore');
+            }}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.registerButtonText}>Register</Text>
+          </TouchableOpacity>
+        </View>
       </View>
-    </View>
+    </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
+  gradientContainer: {
+    flex: 1,
+  },
   container: {
     flex: 1,
     justifyContent: 'center',
     paddingHorizontal: 24,
-    backgroundColor: '#fff',
     ...Platform.select({
       web: {
         boxShadow: '0px 2px 6px rgba(0, 0, 0, 0.15)',
@@ -149,6 +162,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     marginBottom: 24,
     textAlign: 'center',
+    color: '#fff',
   },
   input: {
     height: 48,
@@ -157,6 +171,7 @@ const styles = StyleSheet.create({
     marginBottom: 4,
     paddingHorizontal: 12,
     borderRadius: 6,
+    backgroundColor: 'rgba(255,255,255,0.9)',
   },
   inputError: {
     borderColor: 'red',
@@ -165,5 +180,34 @@ const styles = StyleSheet.create({
     color: 'red',
     marginBottom: 12,
     marginLeft: 4,
+  },
+  loginButton: {
+    backgroundColor: '#fff',
+    paddingVertical: 14,
+    borderRadius: 8,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.3,
+    shadowRadius: 5,
+    elevation: 4,
+  },
+  loginButtonText: {
+    color: '#2575fc',
+    fontSize: 18,
+    fontWeight: '600',
+  },
+  registerButton: {
+    backgroundColor: 'transparent',
+    borderColor: '#fff',
+    borderWidth: 2,
+    paddingVertical: 14,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  registerButtonText: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: '600',
   },
 });

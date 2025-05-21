@@ -1,12 +1,13 @@
+import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import {
   Alert,
-  Button,
   Platform,
   StyleSheet,
   Text,
   TextInput,
+  TouchableOpacity,
   View,
 } from 'react-native';
 
@@ -22,11 +23,12 @@ export default function RegisterScreen() {
   const [passwordError, setPasswordError] = useState('');
   const [confirmPasswordError, setConfirmPasswordError] = useState('');
 
+  // Colored & emoji-based logs for cross-platform safety
   const log = {
-    success: (msg: string) => console.log(`\x1b[32m[SUCCESS]\x1b[0m ${msg}`),
-    warn: (msg: string) => console.log(`\x1b[33m[WARNING]\x1b[0m ${msg}`),
-    error: (msg: string) => console.log(`\x1b[31m[ERROR]\x1b[0m ${msg}`),
-    info: (msg: string) => console.log(`\x1b[36m[INFO]\x1b[0m ${msg}`),
+    success: (msg: any) => console.log('✅ [SUCCESS]', msg),
+    warn: (msg: any) => console.warn('⚠️ [WARNING]', msg),
+    error: (msg: any) => console.error('❌ [ERROR]', msg),
+    info: (msg: any) => console.info('ℹ️ [INFO]', msg),
   };
 
   const handleRegister = async () => {
@@ -99,7 +101,10 @@ export default function RegisterScreen() {
       } else {
         log.error(`Backend error: ${data.error}`);
 
-        if (data.error?.toLowerCase().includes('username') && data.error?.toLowerCase().includes('email')) {
+        if (
+          data.error?.toLowerCase().includes('username') &&
+          data.error?.toLowerCase().includes('email')
+        ) {
           setNomError('Username already exists');
           setEmailError('Email already exists');
         } else if (data.error?.toLowerCase().includes('username')) {
@@ -118,84 +123,100 @@ export default function RegisterScreen() {
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Register</Text>
+    <LinearGradient colors={['#6a11cb', '#2575fc']} style={styles.gradientContainer}>
+      <View style={styles.container}>
+        <Text style={styles.title}>Register</Text>
 
-      <TextInput
-        style={[styles.input, nomError ? styles.inputError : null]}
-        placeholder="Username"
-        value={nom}
-        onChangeText={text => {
-          setNom(text);
-          if (nomError) setNomError('');
-        }}
-      />
-      {nomError ? <Text style={styles.errorText}>{nomError}</Text> : null}
+        <TextInput
+          style={[styles.input, nomError ? styles.inputError : null]}
+          placeholder="Username"
+          value={nom}
+          onChangeText={text => {
+            setNom(text);
+            if (nomError) setNomError('');
+          }}
+        />
+        {nomError ? <Text style={styles.errorText}>{nomError}</Text> : null}
 
-      <TextInput
-        style={[styles.input, emailError ? styles.inputError : null]}
-        placeholder="Email"
-        keyboardType="email-address"
-        autoCapitalize="none"
-        value={email}
-        onChangeText={text => {
-          setEmail(text);
-          if (emailError) setEmailError('');
-        }}
-      />
-      {emailError ? <Text style={styles.errorText}>{emailError}</Text> : null}
+        <TextInput
+          style={[styles.input, emailError ? styles.inputError : null]}
+          placeholder="Email"
+          keyboardType="email-address"
+          autoCapitalize="none"
+          value={email}
+          onChangeText={text => {
+            setEmail(text);
+            if (emailError) setEmailError('');
+          }}
+        />
+        {emailError ? <Text style={styles.errorText}>{emailError}</Text> : null}
 
-      <TextInput
-        style={[styles.input, passwordError ? styles.inputError : null]}
-        placeholder="Password"
-        secureTextEntry
-        value={password}
-        onChangeText={text => {
-          setPassword(text);
-          if (passwordError) setPasswordError('');
-        }}
-      />
-      {passwordError ? <Text style={styles.errorText}>{passwordError}</Text> : null}
+        <TextInput
+          style={[styles.input, passwordError ? styles.inputError : null]}
+          placeholder="Password"
+          secureTextEntry
+          value={password}
+          onChangeText={text => {
+            setPassword(text);
+            if (passwordError) setPasswordError('');
+          }}
+        />
+        {passwordError ? <Text style={styles.errorText}>{passwordError}</Text> : null}
 
-      <TextInput
-        style={[styles.input, confirmPasswordError ? styles.inputError : null]}
-        placeholder="Confirm Password"
-        secureTextEntry
-        value={confirmPassword}
-        onChangeText={text => {
-          setConfirmPassword(text);
-          if (confirmPasswordError) setConfirmPasswordError('');
-        }}
-      />
-      {confirmPasswordError ? <Text style={styles.errorText}>{confirmPasswordError}</Text> : null}
+        <TextInput
+          style={[styles.input, confirmPasswordError ? styles.inputError : null]}
+          placeholder="Confirm Password"
+          secureTextEntry
+          value={confirmPassword}
+          onChangeText={text => {
+            setConfirmPassword(text);
+            if (confirmPasswordError) setConfirmPasswordError('');
+          }}
+        />
+        {confirmPasswordError ? <Text style={styles.errorText}>{confirmPasswordError}</Text> : null}
 
-      <Button title="Register" onPress={handleRegister} />
+        <TouchableOpacity style={styles.registerButton} onPress={handleRegister} activeOpacity={0.8}>
+          <Text style={styles.registerButtonText}>Register</Text>
+        </TouchableOpacity>
 
-      <View style={{ marginTop: 16 }}>
-        <Button title="Go to Login" onPress={() => router.push('/')} />
+        <View style={{ marginTop: 16 }}>
+          <TouchableOpacity
+            style={styles.goLoginButton}
+            onPress={() => router.push('/')}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.goLoginButtonText}>Go to Login</Text>
+          </TouchableOpacity>
+        </View>
       </View>
-    </View>
+    </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
+  gradientContainer: {
+    flex: 1,
+  },
   container: {
     flex: 1,
     justifyContent: 'center',
     paddingHorizontal: 24,
-    backgroundColor: '#fff',
+    backgroundColor: 'rgba(255,255,255,0.9)',
+    borderRadius: 12,
+    marginHorizontal: 16,
+    paddingVertical: 24,
     ...Platform.select({
       ios: {
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.25,
-        shadowRadius: 3.84,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 6,
       },
       android: {
-        elevation: 5,
+        elevation: 8,
       },
       web: {
-        boxShadow: '0px 2px 4px rgba(0,0,0,0.25)',
+        boxShadow: '0px 4px 8px rgba(0,0,0,0.3)',
       },
     }),
   },
@@ -204,14 +225,16 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     marginBottom: 24,
     textAlign: 'center',
+    color: '#333',
   },
   input: {
     height: 48,
     borderColor: '#ccc',
     borderWidth: 1,
-    marginBottom: 4,
+    marginBottom: 8,
     paddingHorizontal: 12,
     borderRadius: 6,
+    backgroundColor: '#fff',
   },
   inputError: {
     borderColor: 'red',
@@ -220,5 +243,34 @@ const styles = StyleSheet.create({
     color: 'red',
     marginBottom: 12,
     marginLeft: 4,
+  },
+  registerButton: {
+    backgroundColor: '#2575fc',
+    paddingVertical: 14,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginTop: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.3,
+    shadowRadius: 5,
+    elevation: 4,
+  },
+  registerButtonText: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: '600',
+  },
+  goLoginButton: {
+    borderColor: '#2575fc',
+    borderWidth: 2,
+    paddingVertical: 14,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  goLoginButtonText: {
+    color: '#2575fc',
+    fontSize: 18,
+    fontWeight: '600',
   },
 });
