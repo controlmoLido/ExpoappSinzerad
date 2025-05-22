@@ -97,7 +97,7 @@ export default function RegisterScreen() {
         setEmail('');
         setPassword('');
         setConfirmPassword('');
-        router.push('/');
+        router.push('/LoginScreen');
       } else {
         log.error(`Backend error: ${data.error}`);
 
@@ -182,7 +182,7 @@ export default function RegisterScreen() {
         <View style={{ marginTop: 16 }}>
           <TouchableOpacity
             style={styles.goLoginButton}
-            onPress={() => router.push('/')}
+            onPress={() => router.push('/LoginScreen')}
             activeOpacity={0.8}
           >
             <Text style={styles.goLoginButtonText}>Go to Login</Text>

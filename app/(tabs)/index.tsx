@@ -61,7 +61,7 @@ export default function LoginScreen() {
         console.log('%cLogin successful for user:', 'color: green;', data.user.nom);
         setNom('');
         setPassword('');
-        router.push('/(tabs)/MainMenu/Main');
+        router.push('/(tabs)/MainMenu/MainScreen');
       } else {
         console.log('%cLogin failed:', 'color: red;', data.error);
         if (data.error === 'Incorrect password') {
@@ -122,7 +122,7 @@ export default function LoginScreen() {
             style={styles.registerButton}
             onPress={() => {
               console.log('%cNavigate to Register screen', 'color: navy;');
-              router.push('/explore');
+              router.push('/(tabs)/RegisterScreen');
             }}
             activeOpacity={0.8}
           >
