@@ -4,210 +4,199 @@ import React, { useState } from 'react';
 import {
   Alert,
   Platform,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
+import { useAuth } from '../(tabs)/context/AuthContext';
+import { loginUser } from '../(tabs)/services/authServices';
 
 export default function LoginScreen() {
   const router = useRouter();
+  const { login } = useAuth();
   const [nom, setNom] = useState('');
   const [password, setPassword] = useState('');
-
   const [nomError, setNomError] = useState('');
   const [passwordError, setPasswordError] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  // Logger object logging only to developer console
+  const log = {
+    success: (msg: string) => {
+      console.log(`%c[SUCCESS]%c ${msg}`, 'color: green; font-weight: bold;', '');
+    },
+    warn: (msg: string) => {
+      console.warn(`[WARNING] ${msg}`);
+    },
+    error: (msg: string) => {
+      console.error(`[ERROR] ${msg}`);
+    },
+    info: (msg: string) => {
+      console.info(`[INFO] ${msg}`);
+    },
+  };
 
   const handleLogin = async () => {
-    console.log('%chandleLogin triggered', 'color: blue; font-weight: bold;');
+    if (loading) return;
+    log.info('Login button pressed');
     setNomError('');
     setPasswordError('');
+    setLoading(true);
 
-    let hasError = false;
     if (!nom) {
       setNomError('Username or Email is required');
-      console.log('%cValidation failed: nom is empty', 'color: orange; font-weight: bold;');
-      hasError = true;
+      log.warn('Missing username or email');
+      setLoading(false);
+      return;
     }
     if (!password) {
       setPasswordError('Password is required');
-      console.log('%cValidation failed: password is empty', 'color: orange; font-weight: bold;');
-      hasError = true;
+      log.warn('Missing password');
+      setLoading(false);
+      return;
     }
-    if (hasError) return;
 
     try {
-      const isEmail = nom.includes('@');
-      const body = isEmail
-        ? { email: nom, password }
-        : { username: nom, password };
-
-      console.log('%cSending login request with body:', 'color: purple;', body);
-
-      const response = await fetch('http://127.0.0.1:5000/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-      });
-
-      console.log('%cResponse status:', 'color: teal;', response.status);
-
-      const data = await response.json();
-      console.log('%cResponse data:', 'color: teal;', data);
-
-      if (response.ok) {
-        Alert.alert('Success', `Welcome, ${data.user.nom}`);
-        console.log('%cLogin successful for user:', 'color: green;', data.user.nom);
-        setNom('');
-        setPassword('');
-        router.push('/(tabs)/MainMenu/MainScreen');
+      const user = await loginUser(nom, password, log);
+      login(user);
+      Alert.alert('Success', `Welcome, ${user.nom}`);
+      setNom('');
+      setPassword('');
+      log.success('Login successful. Navigating to main menu...');
+      router.push('/(tabs)/MainMenu/main');
+    } catch (err: any) {
+      log.error(`Login failed: ${err.message}`);
+      if (err.message === 'Incorrect password') {
+        setPasswordError('Password is incorrect.');
+      } else if (err.message === 'User not found') {
+        setNomError('Username or Email does not exist.');
       } else {
-        console.log('%cLogin failed:', 'color: red;', data.error);
-        if (data.error === 'Incorrect password') {
-          setPasswordError('Password is incorrect.');
-        } else if (
-          data.error === 'User not found' ||
-          data.error === 'Username or Email does not exist'
-        ) {
-          setNomError('Username or Email does not exist.');
-        } else {
-          Alert.alert('Login Failed', data.error || 'Invalid credentials');
-        }
+        Alert.alert('Login Failed', err.message || 'Unexpected error');
       }
-    } catch (error) {
-      console.error('%cLogin error:', 'color: red; font-weight: bold;', error);
-      Alert.alert('Error', 'Network error or backend not running');
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <LinearGradient colors={['#6a11cb', '#2575fc']} style={styles.gradientContainer}>
-      <View style={styles.container}>
-        <Text style={styles.title}>Login</Text>
+    <LinearGradient colors={['#00416A', '#E4E5E6']} style={styles.gradient}>
+      <ScrollView contentContainerStyle={styles.scroll}>
+        <View style={styles.card}>
+          <Text style={styles.title}>Login</Text>
 
-        <TextInput
-          style={[styles.input, nomError ? styles.inputError : null]}
-          placeholder="Username or Email"
-          value={nom}
-          onChangeText={text => {
-            setNom(text);
-            if (nomError) setNomError('');
-            console.log('%cNom input changed:', 'color: brown;', text);
-          }}
-          autoCapitalize="none"
-          keyboardType="email-address"
-        />
-        {nomError ? <Text style={styles.errorText}>{nomError}</Text> : null}
-
-        <TextInput
-          style={[styles.input, passwordError ? styles.inputError : null]}
-          placeholder="Password"
-          value={password}
-          secureTextEntry
-          onChangeText={text => {
-            setPassword(text);
-            if (passwordError) setPasswordError('');
-            console.log('%cPassword input changed', 'color: brown;');
-          }}
-        />
-        {passwordError ? <Text style={styles.errorText}>{passwordError}</Text> : null}
-
-        <TouchableOpacity style={styles.loginButton} onPress={handleLogin} activeOpacity={0.8}>
-          <Text style={styles.loginButtonText}>Login</Text>
-        </TouchableOpacity>
-
-        <View style={{ marginTop: 16 }}>
-          <TouchableOpacity
-            style={styles.registerButton}
-            onPress={() => {
-              console.log('%cNavigate to Register screen', 'color: navy;');
-              router.push('/(tabs)/RegisterScreen');
+          <TextInput
+            style={[styles.input, nomError && styles.inputError]}
+            placeholder="Username or Email"
+            placeholderTextColor="#888"
+            value={nom}
+            onChangeText={text => {
+              setNom(text);
+              if (nomError) setNomError('');
             }}
-            activeOpacity={0.8}
+            autoCapitalize="none"
+            keyboardType="email-address"
+          />
+          {nomError ? <Text style={styles.errorText}>{nomError}</Text> : null}
+
+          <TextInput
+            style={[styles.input, passwordError && styles.inputError]}
+            placeholder="Password"
+            placeholderTextColor="#888"
+            secureTextEntry
+            value={password}
+            onChangeText={text => {
+              setPassword(text);
+              if (passwordError) setPasswordError('');
+            }}
+          />
+          {passwordError ? <Text style={styles.errorText}>{passwordError}</Text> : null}
+
+          <TouchableOpacity
+            style={[styles.loginButton, loading && { opacity: 0.6 }]}
+            onPress={handleLogin}
+            disabled={loading}
           >
-            <Text style={styles.registerButtonText}>Register</Text>
+            <Text style={styles.loginButtonText}>
+              {loading ? 'Logging in...' : 'Login'}
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity onPress={() => router.push('/explore')}>
+            <Text style={styles.registerText}>Don't have an account? Register</Text>
           </TouchableOpacity>
         </View>
-      </View>
+      </ScrollView>
     </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
-  gradientContainer: {
+  gradient: {
     flex: 1,
   },
-  container: {
-    flex: 1,
+  scroll: {
+    flexGrow: 1,
     justifyContent: 'center',
-    paddingHorizontal: 24,
+    padding: 24,
+  },
+  card: {
+    backgroundColor: 'rgba(255,255,255,0.87)',
+    borderRadius: 12,
+    padding: 24,
+    marginBottom: 24,
     ...Platform.select({
-      web: {
-        boxShadow: '0px 2px 6px rgba(0, 0, 0, 0.15)',
-      },
-      android: {
-        elevation: 5,
-      },
+      web: { boxShadow: '0 6px 12px rgba(0,0,0,0.2)' },
+      android: { elevation: 6 },
       ios: {
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.25,
-        shadowRadius: 3.84,
+        shadowOffset: { width: 0, height: 3 },
+        shadowOpacity: 0.3,
+        shadowRadius: 6,
       },
     }),
   },
   title: {
     fontSize: 28,
-    fontWeight: '600',
-    marginBottom: 24,
+    fontWeight: '700',
     textAlign: 'center',
-    color: '#fff',
+    marginBottom: 20,
+    color: '#00416A',
   },
   input: {
     height: 48,
     borderColor: '#ccc',
     borderWidth: 1,
-    marginBottom: 4,
+    borderRadius: 8,
     paddingHorizontal: 12,
-    borderRadius: 6,
-    backgroundColor: 'rgba(255,255,255,0.9)',
+    marginBottom: 10,
+    backgroundColor: '#f7f7f7',
   },
   inputError: {
     borderColor: 'red',
   },
   errorText: {
     color: 'red',
-    marginBottom: 12,
-    marginLeft: 4,
+    fontSize: 13,
+    marginBottom: 8,
   },
   loginButton: {
-    backgroundColor: '#fff',
-    paddingVertical: 14,
+    backgroundColor: '#00416A',
+    paddingVertical: 12,
     borderRadius: 8,
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.3,
-    shadowRadius: 5,
-    elevation: 4,
+    marginTop: 10,
   },
   loginButtonText: {
-    color: '#2575fc',
-    fontSize: 18,
-    fontWeight: '600',
-  },
-  registerButton: {
-    backgroundColor: 'transparent',
-    borderColor: '#fff',
-    borderWidth: 2,
-    paddingVertical: 14,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  registerButtonText: {
     color: '#fff',
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: '600',
+  },
+  registerText: {
+    marginTop: 16,
+    color: '#00416A',
+    textAlign: 'center',
   },
 });

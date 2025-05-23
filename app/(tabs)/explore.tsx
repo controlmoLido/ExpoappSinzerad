@@ -23,54 +23,52 @@ export default function RegisterScreen() {
   const [passwordError, setPasswordError] = useState('');
   const [confirmPasswordError, setConfirmPasswordError] = useState('');
 
-  // Colored & emoji-based logs for cross-platform safety
   const log = {
-    success: (msg: any) => console.log('✅ [SUCCESS]', msg),
-    warn: (msg: any) => console.warn('⚠️ [WARNING]', msg),
-    error: (msg: any) => console.error('❌ [ERROR]', msg),
-    info: (msg: any) => console.info('ℹ️ [INFO]', msg),
+    success: (msg: string) => console.log(`\x1b[32m[SUCCESS]\x1b[0m ${msg}`),
+    warn: (msg: string) => console.log(`\x1b[33m[WARNING]\x1b[0m ${msg}`),
+    error: (msg: string) => console.log(`\x1b[31m[ERROR]\x1b[0m ${msg}`),
+    info: (msg: string) => console.log(`\x1b[36m[INFO]\x1b[0m ${msg}`),
   };
 
   const handleRegister = async () => {
-    log.info('Starting registration process...');
+    log.info('Register button pressed');
+    console.log('Current input values:', { nom, email, password, confirmPassword });
+
     setNomError('');
     setEmailError('');
     setPasswordError('');
     setConfirmPasswordError('');
-
     let hasError = false;
 
     if (!nom) {
       setNomError('Username is required');
-      log.warn('Username is missing');
+      log.warn('Missing username');
       hasError = true;
     }
 
     if (!email) {
       setEmailError('Email is required');
-      log.warn('Email is missing');
+      log.warn('Missing email');
       hasError = true;
     } else if (!email.includes('@')) {
-      setEmailError('Email must contain "@"');
-      log.warn('Email format is invalid (missing "@")');
+      setEmailError('Invalid email format');
+      log.warn('Email format is incorrect');
       hasError = true;
     }
 
     if (!password) {
       setPasswordError('Password is required');
-      log.warn('Password is missing');
+      log.warn('Missing password');
       hasError = true;
     }
 
     if (!confirmPassword) {
-      setConfirmPasswordError('Confirm Password is required');
-      log.warn('Confirm password is missing');
+      setConfirmPasswordError('Please confirm your password');
+      log.warn('Missing confirm password');
       hasError = true;
-    }
-
-    if (password && confirmPassword && password !== confirmPassword) {
+    } else if (confirmPassword !== password) {
       setConfirmPasswordError('Passwords do not match');
-      log.warn('Passwords do not match');
+      log.warn('Password mismatch');
       hasError = true;
     }
 
@@ -80,7 +78,7 @@ export default function RegisterScreen() {
     }
 
     try {
-      log.info('Sending POST request to backend...');
+      log.info('Sending registration request...');
       const response = await fetch('http://127.0.0.1:5000/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -88,74 +86,72 @@ export default function RegisterScreen() {
       });
 
       const data = await response.json();
-      log.info(`Response received: ${JSON.stringify(data)}`);
+      console.log('Response data:', data);
 
       if (response.ok) {
-        log.success('Registration successful!');
-        Alert.alert('Success', 'Registration complete! Please log in.');
+        log.success('User registered successfully!');
+        Alert.alert('Success', 'Account created. Please log in.');
         setNom('');
         setEmail('');
         setPassword('');
         setConfirmPassword('');
-        router.push('/LoginScreen');
+        router.push('/');
       } else {
-        log.error(`Backend error: ${data.error}`);
-
-        if (
-          data.error?.toLowerCase().includes('username') &&
-          data.error?.toLowerCase().includes('email')
-        ) {
+        log.warn(`Registration failed: ${data.error}`);
+        if (data.error?.toLowerCase().includes('username')) {
           setNomError('Username already exists');
-          setEmailError('Email already exists');
-        } else if (data.error?.toLowerCase().includes('username')) {
-          setNomError('Username already exists');
-        } else if (data.error?.toLowerCase().includes('email')) {
+        }
+        if (data.error?.toLowerCase().includes('email')) {
           setEmailError('Email already exists');
         } else {
           Alert.alert('Registration Failed', data.error || 'Unknown error');
         }
       }
     } catch (error) {
-      log.error('Network error or backend not reachable');
-      console.error(error);
+      log.error('Registration failed due to network or server error');
+      console.error('Register error:', error);
       Alert.alert('Error', 'Network error or backend not running');
     }
   };
 
   return (
-    <LinearGradient colors={['#6a11cb', '#2575fc']} style={styles.gradientContainer}>
-      <View style={styles.container}>
+    <LinearGradient colors={['#00416A', '#E4E5E6']} style={styles.gradient}>
+      <View style={styles.card}>
         <Text style={styles.title}>Register</Text>
 
         <TextInput
-          style={[styles.input, nomError ? styles.inputError : null]}
+          style={[styles.input, nomError && styles.inputError]}
           placeholder="Username"
+          placeholderTextColor="#888"
           value={nom}
           onChangeText={text => {
             setNom(text);
             if (nomError) setNomError('');
           }}
+          autoCapitalize="none"
         />
         {nomError ? <Text style={styles.errorText}>{nomError}</Text> : null}
 
         <TextInput
-          style={[styles.input, emailError ? styles.inputError : null]}
+          style={[styles.input, emailError && styles.inputError]}
           placeholder="Email"
-          keyboardType="email-address"
-          autoCapitalize="none"
+          placeholderTextColor="#888"
           value={email}
           onChangeText={text => {
             setEmail(text);
             if (emailError) setEmailError('');
           }}
+          keyboardType="email-address"
+          autoCapitalize="none"
         />
         {emailError ? <Text style={styles.errorText}>{emailError}</Text> : null}
 
         <TextInput
-          style={[styles.input, passwordError ? styles.inputError : null]}
+          style={[styles.input, passwordError && styles.inputError]}
           placeholder="Password"
-          secureTextEntry
+          placeholderTextColor="#888"
           value={password}
+          secureTextEntry
           onChangeText={text => {
             setPassword(text);
             if (passwordError) setPasswordError('');
@@ -164,113 +160,101 @@ export default function RegisterScreen() {
         {passwordError ? <Text style={styles.errorText}>{passwordError}</Text> : null}
 
         <TextInput
-          style={[styles.input, confirmPasswordError ? styles.inputError : null]}
+          style={[styles.input, confirmPasswordError && styles.inputError]}
           placeholder="Confirm Password"
-          secureTextEntry
+          placeholderTextColor="#888"
           value={confirmPassword}
+          secureTextEntry
           onChangeText={text => {
             setConfirmPassword(text);
             if (confirmPasswordError) setConfirmPasswordError('');
           }}
         />
-        {confirmPasswordError ? <Text style={styles.errorText}>{confirmPasswordError}</Text> : null}
+        {confirmPasswordError ? (
+          <Text style={styles.errorText}>{confirmPasswordError}</Text>
+        ) : null}
 
-        <TouchableOpacity style={styles.registerButton} onPress={handleRegister} activeOpacity={0.8}>
-          <Text style={styles.registerButtonText}>Register</Text>
+        <TouchableOpacity style={styles.loginButton} onPress={handleRegister}>
+          <Text style={styles.loginButtonText}>Register</Text>
         </TouchableOpacity>
 
-        <View style={{ marginTop: 16 }}>
-          <TouchableOpacity
-            style={styles.goLoginButton}
-            onPress={() => router.push('/LoginScreen')}
-            activeOpacity={0.8}
-          >
-            <Text style={styles.goLoginButtonText}>Go to Login</Text>
-          </TouchableOpacity>
-        </View>
+        <TouchableOpacity
+          onPress={() => {
+            console.log('Navigating to login screen...');
+            router.push('/');
+          }}
+        >
+          <Text style={styles.registerText}>Already have an account? Login</Text>
+        </TouchableOpacity>
       </View>
     </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
-  gradientContainer: {
-    flex: 1,
-  },
-  container: {
+  gradient: {
     flex: 1,
     justifyContent: 'center',
     paddingHorizontal: 24,
-    backgroundColor: 'rgba(255,255,255,0.9)',
+  },
+  card: {
+    backgroundColor: '#ffffffdd',
     borderRadius: 12,
-    marginHorizontal: 16,
-    paddingVertical: 24,
+    padding: 24,
     ...Platform.select({
-      ios: {
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.3,
-        shadowRadius: 6,
+      web: {
+        boxShadow: '0 6px 12px rgba(0,0,0,0.2)',
       },
       android: {
-        elevation: 8,
+        elevation: 6,
       },
-      web: {
-        boxShadow: '0px 4px 8px rgba(0,0,0,0.3)',
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 3 },
+        shadowOpacity: 0.3,
+        shadowRadius: 6,
       },
     }),
   },
   title: {
     fontSize: 28,
-    fontWeight: '600',
-    marginBottom: 24,
+    fontWeight: '700',
     textAlign: 'center',
-    color: '#333',
+    marginBottom: 20,
+    color: '#00416A',
   },
   input: {
     height: 48,
     borderColor: '#ccc',
     borderWidth: 1,
-    marginBottom: 8,
+    borderRadius: 8,
     paddingHorizontal: 12,
-    borderRadius: 6,
-    backgroundColor: '#fff',
+    marginBottom: 10,
+    backgroundColor: '#f7f7f7',
   },
   inputError: {
     borderColor: 'red',
   },
   errorText: {
     color: 'red',
-    marginBottom: 12,
-    marginLeft: 4,
+    fontSize: 13,
+    marginBottom: 8,
   },
-  registerButton: {
-    backgroundColor: '#2575fc',
-    paddingVertical: 14,
+  loginButton: {
+    backgroundColor: '#00416A',
+    paddingVertical: 12,
     borderRadius: 8,
     alignItems: 'center',
-    marginTop: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.3,
-    shadowRadius: 5,
-    elevation: 4,
+    marginTop: 10,
   },
-  registerButtonText: {
+  loginButtonText: {
     color: '#fff',
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: '600',
   },
-  goLoginButton: {
-    borderColor: '#2575fc',
-    borderWidth: 2,
-    paddingVertical: 14,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  goLoginButtonText: {
-    color: '#2575fc',
-    fontSize: 18,
-    fontWeight: '600',
+  registerText: {
+    marginTop: 16,
+    color: '#00416A',
+    textAlign: 'center',
   },
 });
